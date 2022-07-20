@@ -16,14 +16,14 @@ How to evaluate?
 6. Run file display.py if you want to display process in some iterations.
    display.py
 => The result is an image automatically saved in /resuls/images as following  
-![](../download.png)
+![](images/download.png)
 7. Run file create_gif.py to create gif for diffusion process.  
    python create_gif.py 
 => This will create a gif file for process visulisation in /results/images.  
-* Top down visulization: Initialization: 80 at centers and 25 around. Boundary condition: 100 at top right and 0 at bottom left.
+* Top down visulization: Initialization: 80 at centers and 25 around. Boundary condition: 100 at top right and 0 at bottom left.  
 ![](images/top_down.gif)
 * Top right visualization: Initialization: 80 at centers and 25 around.
-Boundary condition: 100 at top down, and 0 at left and right side.
+Boundary condition: 100 at top down, and 0 at left and right side.  
 ![](images/top_right.gif)
 
 
