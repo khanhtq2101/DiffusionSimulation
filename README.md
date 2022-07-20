@@ -1,6 +1,6 @@
 Mini-project: Gauss Seidel Parallel Programming with Cuda
 ------------------------------------------------------------------------------------------------------------------------
-https://github.com/khanhtq2101/ParallelDiffusionSimulation.git
+https://github.com/khanhtq2101/ParallelDiffusionSimulation.git  
 Implementing Gauss Seidel algorithm by parallel programming with cuda and demo visualization.
 
 How to evaluate?  
