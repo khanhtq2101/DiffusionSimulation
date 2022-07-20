@@ -22,7 +22,7 @@ How to evaluate?
 ```
 6. Run file display.py if you want to display process in some iterations.
 ```
-   display.py
+   python display.py
 ```
 => The result is an image automatically saved in /resuls/images as following  
 ![](images/download.png)
