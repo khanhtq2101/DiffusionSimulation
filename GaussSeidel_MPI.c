@@ -7,13 +7,13 @@
 #define N 256
 
 #define U 100
-#define D 100
+#define D 0
 #define L 0
-#define R 0
+#define R 100
 
 void initialize(float *C);
 void write2File(float *C, char name[]);
-void redUpdate(float *C_local, int h, int w, int id, int size);
+void redUpdate(float *C_local, float *Up, float *Down, int h, int w, int id, int size);
 void blackUpdate(float *C_local, float *Up, float *Down, int h, int w, int id, int size);
 
 
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 	}
 	
 	
-	for (i = 0; i < 1; i ++) {
+	for (i = 0; i < 10000; i ++) {
 		//Communication 
 		if (id == 0){
 			//Send down to next processor
@@ -84,12 +84,17 @@ int main(int argc, char *argv[]) {
 			MPI_Recv(Down, N, MPI_FLOAT, id + 1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 		
-
-		printf("I am processor %d, Down value %f\n", id, Down[128]);
-
+		redUpdate(C_local, Up, Down, m, N, id, size);
+		blackUpdate(C_local, Up, Down, m, N, id, size);
 	}
 	
+	//Gather heat grid to processor 0
+	MPI_Gather(C_local, m*N, MPI_FLOAT, C, m*N, MPI_FLOAT, 0, MPI_COMM_WORLD);
 	
+	if (id == 0){
+		printf("Value in top right: %f\n", C[N-1]);
+		write2File(C, "final.txt");
+	}
 		
 	MPI_Finalize();
 }
@@ -108,7 +113,7 @@ void initialize(float *C)
         }
 }
 
-void redUpdate(float *C_local, int h, int w, int id, int size) {
+void redUpdate(float *C_local, float *Up, float *Down, int h, int w, int id, int size) {
 		int red_align, i, j;
 		if (h % 2 == 0) {
 			red_align = 0;
@@ -116,9 +121,36 @@ void redUpdate(float *C_local, int h, int w, int id, int size) {
 			red_align = id %2;
 		}
 		
+		float u, d, l, r;
+		
 		for (i = 0; i < h; i ++) {
 			for (j = (i + red_align) % 2; j < w; j += 2) {
-				printf("(%i, %i) \n", i, j);
+				//check boundary condition dim x
+				if (i == 0) {
+					u = Up[j];
+					d = C_local[(i+1)*w + j];
+				} else if (i == h - 1) {
+					u = C_local[(i-1)*w +j];
+					d = Down[j];
+				} else {
+					u = C_local[(i-1)*w +j];
+					d = C_local[(i+1)*w + j];
+				}
+				
+				//check boundary condition dim y
+				if (j == 0) {
+					r = C_local[i*w + j + 1];
+					l = L;
+				} else if (j == w - 1) {
+					r = R;
+					l = C_local[i*w + j - 1];
+				} else {
+					l = C_local[i*w + j - 1];
+					r = C_local[i*w + j + 1];
+				}
+				
+				//Update center value
+				C_local[i*w + j] = (u + d + l + r)/4;
 			}
 		}		
 }
@@ -135,36 +167,32 @@ void blackUpdate(float *C_local, float *Up, float *Down, int h, int w, int id, i
 		
 		for (i = 0; i < h; i ++) {
 			for (j = (i + black_align + 1) % 2; j < w; j += 2) {
-				//check boundary condition dim x
+				//check boundary condition vertically
 				if (i == 0) {
-					d = C_local[(i+1)*N + j];
-					if (id == 0) {
-						u = U;
-					} else {
-						u = Up[j];
-					}
+					u = Up[j];
+					d = C_local[(i+1)*w + j];
 				} else if (i == h - 1) {
-					if (id == size) {
-						d = D;
-					} else {
-						d = Down[j];
-					}
-					u = C_local[(i-1)*N +j];
+					u = C_local[(i-1)*w +j];
+					d = Down[j];
+				} else {
+					u = C_local[(i-1)*w +j];
+					d = C_local[(i+1)*w + j];
 				}
 				
-				//check boundary condition dim y
+				//check boundary condition horizontally
 				if (j == 0) {
-					r = C_local[i*N + j + 1];
+					r = C_local[i*w + j + 1];
 					l = L;
-				} else if (j == N) {
+				} else if (j == w-1) {
 					r = R;
-					l = C_local[i*N + j - 1];
+					l = C_local[i*w + j - 1];
 				} else {
-					l = C_local[i*N + j - 1];
-					r = C_local[i*N + j + 1];
+					l = C_local[i*w + j - 1];
+					r = C_local[i*w + j + 1];
 				}
-					
-				printf("(%i, %i) \n", i, j);
+				
+				//Update center value
+				C_local[i*w + j] = (u + d + l + r)/4;
 			}
 		}		
 }
