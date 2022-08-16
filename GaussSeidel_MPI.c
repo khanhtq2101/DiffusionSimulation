@@ -11,10 +11,12 @@
 #define L 0
 #define R 100
 
+#define Delta 0.1
+
 void initialize(float *C);
 void write2File(float *C, char name[]);
-void redUpdate(float *C_local, float *Up, float *Down, int h, int w, int id, int size);
-void blackUpdate(float *C_local, float *Up, float *Down, int h, int w, int id, int size);
+void redUpdate(float *C_local, float *Up, float *Down, float *delta, int h, int w, int id, int size);
+void blackUpdate(float *C_local, float *Up, float *Down, float *delta, int h, int w, int id, int size);
 
 
 int main(int argc, char *argv[]) {
@@ -57,8 +59,12 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	
-	
-	for (i = 0; i < 10000; i ++) {
+	//maximum changing delta
+	float delta, delta_glob;
+
+	do {
+		delta = 0;
+		
 		//Communication 
 		if (id == 0){
 			//Send down to next processor
@@ -84,14 +90,23 @@ int main(int argc, char *argv[]) {
 			MPI_Recv(Down, N, MPI_FLOAT, id + 1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 		
-		redUpdate(C_local, Up, Down, m, N, id, size);
-		blackUpdate(C_local, Up, Down, m, N, id, size);
-	}
+		//Red and black update
+		redUpdate(C_local, Up, Down, &delta, m, N, id, size);
+		blackUpdate(C_local, Up, Down, &delta, m, N, id, size);
+		
+		//check stopping condition
+		//Obtain global maximum changing and braodcast to all process
+		MPI_Allreduce(&delta, &delta_glob, 1, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);
+
+	} while (delta_glob > Delta);
+	
+	printf("Delta: %f \n", delta);
 	
 	//Gather heat grid to processor 0
 	MPI_Gather(C_local, m*N, MPI_FLOAT, C, m*N, MPI_FLOAT, 0, MPI_COMM_WORLD);
-	
+		
 	if (id == 0){
+		printf("Detla max: %f \n", delta_glob);
 		printf("Value in top right: %f\n", C[N-1]);
 		write2File(C, "final.txt");
 	}
@@ -113,7 +128,7 @@ void initialize(float *C)
         }
 }
 
-void redUpdate(float *C_local, float *Up, float *Down, int h, int w, int id, int size) {
+void redUpdate(float *C_local, float *Up, float *Down, float *delta, int h, int w, int id, int size) {
 		int red_align, i, j;
 		if (h % 2 == 0) {
 			red_align = 0;
@@ -121,7 +136,11 @@ void redUpdate(float *C_local, float *Up, float *Down, int h, int w, int id, int
 			red_align = id %2;
 		}
 		
+		//neighboring points
 		float u, d, l, r;
+		
+		//changing of value
+		float c;
 		
 		for (i = 0; i < h; i ++) {
 			for (j = (i + red_align) % 2; j < w; j += 2) {
@@ -149,13 +168,18 @@ void redUpdate(float *C_local, float *Up, float *Down, int h, int w, int id, int
 					r = C_local[i*w + j + 1];
 				}
 				
+				c = C_local[i*w + j] - (u + d + l + r)/4;
+				if (c > *delta) {
+					*delta = c;
+				}
+				
 				//Update center value
 				C_local[i*w + j] = (u + d + l + r)/4;
 			}
-		}		
+		}
 }
 
-void blackUpdate(float *C_local, float *Up, float *Down, int h, int w, int id, int size) {
+void blackUpdate(float *C_local, float *Up, float *Down, float *delta, int h, int w, int id, int size) {
 		int black_align, i, j;
 		if (h % 2 == 0) {
 			black_align = 0;
@@ -163,7 +187,11 @@ void blackUpdate(float *C_local, float *Up, float *Down, int h, int w, int id, i
 			black_align = id %2;
 		}
 		
+		//neighboring points
 		float u, d, l, r;
+		
+		//changing of value
+		float c;
 		
 		for (i = 0; i < h; i ++) {
 			for (j = (i + black_align + 1) % 2; j < w; j += 2) {
@@ -190,7 +218,12 @@ void blackUpdate(float *C_local, float *Up, float *Down, int h, int w, int id, i
 					l = C_local[i*w + j - 1];
 					r = C_local[i*w + j + 1];
 				}
-				
+								
+				c = C_local[i*w + j] - (u + d + l + r)/4;
+				if (c > *delta) {
+					*delta = c;
+				}
+
 				//Update center value
 				C_local[i*w + j] = (u + d + l + r)/4;
 			}
