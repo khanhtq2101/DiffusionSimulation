@@ -11,7 +11,7 @@
 #define L 0
 #define R 100
 
-#define Delta 0.1
+#define Delta 0.001
 
 void initialize(float *C);
 void write2File(float *C, char name[]);
@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
 	float delta, delta_glob;
 
 	do {
+		i += 1;
 		delta = 0;
 		
 		//Communication 
@@ -106,6 +107,7 @@ int main(int argc, char *argv[]) {
 	MPI_Gather(C_local, m*N, MPI_FLOAT, C, m*N, MPI_FLOAT, 0, MPI_COMM_WORLD);
 		
 	if (id == 0){
+		printf("Number of iterations: %d \n", i);
 		printf("Detla max: %f \n", delta_glob);
 		printf("Value in top right: %f\n", C[N-1]);
 		write2File(C, "final.txt");
@@ -235,7 +237,7 @@ void write2File(float *C, char name[])
     char path[50] = "./results/MPI/";
     strcat(path, name);
 
-    FILE *result = fopen(path, "a");
+    FILE *result = fopen(path, "w");
     int i, j;
 
     for (i = 0; i < M; i++)
