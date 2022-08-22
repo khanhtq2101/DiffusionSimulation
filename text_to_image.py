@@ -6,8 +6,9 @@ import os
 if not os.path.isdir('./results/images/'):
   os.system('mkdir ./results/images/')
 
-for name in os.listdir('./results/CUDA/'):
-    file_path = os.path.join('./results/CUDA/', name)
+for name in os.listdir('./results/MPI/'):
+    file_path = os.path.join('./results/MPI/', name)
+    print(file_path)
     f = open(file_path)
     heat_cuda = np.zeros((256, 256), np.float64)
 
