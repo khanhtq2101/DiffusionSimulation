@@ -7,9 +7,9 @@
 #define N 256
 
 #define U 100
-#define D 0
+#define D 100
 #define L 0
-#define R 100
+#define R 0
 
 #define Delta 0.001
 
@@ -34,8 +34,6 @@ int main(int argc, char *argv[]) {
 	
 	//Processor 1 is responsibale to initialize grid value
 	if (id == 1) {
-		printf("I am processor %d\n", id);
-		printf("Number of processor: %d \n", size); 
 		initialize(C);
 	}
 	
@@ -61,6 +59,11 @@ int main(int argc, char *argv[]) {
 	
 	//maximum changing delta
 	float delta, delta_glob;
+	
+	//save results in progress variables
+	int k = 1;
+  	char *iter_name;
+  	iter_name = (char *)malloc(20*sizeof(char));
 
 	do {
 		i += 1;
@@ -98,6 +101,20 @@ int main(int argc, char *argv[]) {
 		//check stopping condition
 		//Obtain global maximum changing and braodcast to all process
 		MPI_Allreduce(&delta, &delta_glob, 1, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);
+		
+		//save intermidiate states every 100 iterrations
+	    if (k % 100 == 0) {
+	    	MPI_Gather(C_local, m*N, MPI_FLOAT, C, m*N, MPI_FLOAT, 0, MPI_COMM_WORLD);
+	     	
+	     	if (id == 0) {
+			 	iter_name = (char *)malloc(50*sizeof(char));
+			 	sprintf(iter_name, "%05d", k);
+			 	strcat(iter_name, ".txt");
+
+			 	write2File(C, iter_name);
+	     	}
+	    } 
+	    k += 1;
 
 	} while (delta_glob > Delta);
 	
@@ -107,10 +124,11 @@ int main(int argc, char *argv[]) {
 	MPI_Gather(C_local, m*N, MPI_FLOAT, C, m*N, MPI_FLOAT, 0, MPI_COMM_WORLD);
 		
 	if (id == 0){
-		printf("Number of iterations: %d \n", i);
-		printf("Detla max: %f \n", delta_glob);
-		printf("Value in top right: %f\n", C[N-1]);
-		write2File(C, "final.txt");
+		//save final result
+		iter_name = (char *)malloc(50*sizeof(char));
+		sprintf(iter_name, "%05d", k);
+		strcat(iter_name, ".txt");
+		write2File(C, iter_name);
 	}
 		
 	MPI_Finalize();
