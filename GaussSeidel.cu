@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 	float *C;
 	C = (float *)malloc((M * N) * sizeof(float));
 	initialize(C);
-	Write2File(C, "00000.txt");
+	write2File(C, "00000.txt");
 
 	//Send C to gpu
 	float *C_gpu;
