@@ -1,37 +1,55 @@
-Capstone Project: Gauss Seidel Parallel Programming with Cuda
+Capstone Project: Diffusion Simulation with Cuda, MPI
 ------------------------------------------------------------------------------------------------------------------------
 https://github.com/khanhtq2101/ParallelDiffusionSimulation.git  
 Implementing Gauss Seidel algorithm by parallel programming with cuda and demo visualization.
 
-How to evaluate?  
+How to run?  
 ------------------------------------------------------------------------------------------------------------------------
-1. Clone the repo: https://github.com/khanhtq2101/ParallelDiffusionSimulation.git
-2. cd to the cloned directory
-3. Create result folder:  
+**1. CUDA:**
+ - Create result folder:  
 ```
    mkdir -p ./results/CUDA
 ```
-4. Compile the GaussSeidel.cu file, the output will automatically save on above /results/CUDA folder: 
+ - Compile and run the GaussSeidel.cu file:
 ``` 
    nvcc -o GaussSeidel_CUDA GaussSeidel.cu  
    ./GaussSeidel_CUDA
 ```
-5. Run file text_to_imgage.py file to convert result in text to image.  
+The output will be saved on /results/CUDA folder.  
+
+**2. MPI:** 
+ - Create result folder:
+ ```
+   mkdir -p ./results/MPI
+ ```
+  - Compile the GaussSeidel_MPI.c file:
+``` 
+   mpicc -o GaussSeidel_MPI GaussSeidel_MPI.c  
+```
+ - Run the compiled file:
+ ```
+   mpirun -np 16 GaussSeidel_MPI
+ ```
+ The output will be saved on /results/MPI folder.  
+ 
+**3. Display the results:**  
+- Run file text_to_imgage.py file to convert result in text to image.  
 ```
    python text_to_image.py 
 ```
-6. Run file display.py if you want to display process in some iterations.
+- Run file display.py if you want to display process in some iterations.
 ```
    python display.py
-```
-=> The result is an image automatically saved in /resuls/images as following  
-![](images/download.png)
-7. Run file create_gif.py to create gif for diffusion process.  
+```  
+- Run file create_gif.py to create gif for diffusion process.  
 ```
    python create_gif.py 
 ```
-=> This will create a gif file for process visulisation in /results/images.  
+
+**4. Results:**  
 * Top down visulization: Initialization: 80 at centers and 25 around. Boundary condition: 100 at top right and 0 at bottom left.  
+![](images/download.png)  
+Gift display:  
 ![](images/top_down.gif)
 * Top right visualization: Initialization: 80 at centers and 25 around.
 Boundary condition: 100 at top down, and 0 at left and right side.  
